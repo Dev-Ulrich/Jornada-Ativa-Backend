@@ -83,9 +83,9 @@ public class SecurityConfig {
             @Value("${app.cors.exposed-headers:Authorization}") String exposed,
             @Value("${app.cors.allow-credentials:true}") boolean allowCreds
     ) {
-        CorsConfiguration cfg = new CorsConfiguration();
+        var cfg = new CorsConfiguration();
 
-        // Preferir patterns quando fornecidos (permite https://*.vercel.app com credenciais)
+        // ✅ Preferir patterns (permite previews tipo https://algo-xxx.vercel.app)
         if (originPatterns != null && !originPatterns.isBlank()) {
             cfg.setAllowedOriginPatterns(Arrays.stream(originPatterns.split("\\s*,\\s*")).toList());
         } else if (origins != null && !origins.isBlank()) {
@@ -97,7 +97,8 @@ public class SecurityConfig {
         cfg.setExposedHeaders(Arrays.stream(exposed.split("\\s*,\\s*")).toList());
         cfg.setAllowCredentials(allowCreds);
 
-        UrlBasedCorsConfigurationSource src = new UrlBasedCorsConfigurationSource();
+        var src = new UrlBasedCorsConfigurationSource();
         src.registerCorsConfiguration("/**", cfg);
         return src;
-    }}
+    }
+    }
