@@ -2,6 +2,7 @@ package br.com.belval.api.jornadaativa.security.config;
 
 import br.com.belval.api.jornadaativa.security.jwt.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
+import org.apache.catalina.filters.CorsFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,6 +22,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -75,30 +77,23 @@ public class SecurityConfig {
      * - app.cors.allowed-origin-patterns: padrões (ex.: https://*.vercel.app)
      */
     @Bean
-    public CorsConfigurationSource corsConfigurationSource(
-            @Value("${app.cors.allowed-origins:}") String origins,
-            @Value("${app.cors.allowed-origin-patterns:}") String originPatterns,
-            @Value("${app.cors.allowed-methods:GET,POST,PUT,PATCH,DELETE,OPTIONS}") String methods,
-            @Value("${app.cors.allowed-headers:Authorization,Content-Type,Accept,Origin}") String headers,
-            @Value("${app.cors.exposed-headers:Authorization}") String exposed,
-            @Value("${app.cors.allow-credentials:true}") boolean allowCreds
-    ) {
-        var cfg = new CorsConfiguration();
+    public CorsFilter corsFilter() {
+        CorsConfiguration cfg = new CorsConfiguration();
+        cfg.setAllowCredentials(true);
 
-        // ✅ Preferir patterns (permite previews tipo https://algo-xxx.vercel.app)
-        if (originPatterns != null && !originPatterns.isBlank()) {
-            cfg.setAllowedOriginPatterns(Arrays.stream(originPatterns.split("\\s*,\\s*")).toList());
-        } else if (origins != null && !origins.isBlank()) {
-            cfg.setAllowedOrigins(Arrays.stream(origins.split("\\s*,\\s*")).toList());
-        }
+        // ⭐ ORIGENS PERMITIDAS (fixo para destravar)
+        cfg.setAllowedOriginPatterns(List.of(
+                "https://jornada-ativa.vercel.app",
+                "https://*.vercel.app",
+                "http://localhost:5173"
+        ));
+        // Métodos/Headers padrão de SPA
+        cfg.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
+        cfg.setAllowedHeaders(List.of("Authorization","Content-Type","Accept","Origin","X-Requested-With"));
+        cfg.setExposedHeaders(List.of("Authorization"));
 
-        cfg.setAllowedMethods(Arrays.stream(methods.split("\\s*,\\s*")).toList());
-        cfg.setAllowedHeaders(Arrays.stream(headers.split("\\s*,\\s*")).toList());
-        cfg.setExposedHeaders(Arrays.stream(exposed.split("\\s*,\\s*")).toList());
-        cfg.setAllowCredentials(allowCreds);
-
-        var src = new UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource src = new UrlBasedCorsConfigurationSource();
         src.registerCorsConfiguration("/**", cfg);
-        return src;
+        return new CorsFilter(src); // ⭐ responde o preflight ANTES do Spring Security
     }
     }
