@@ -1,9 +1,7 @@
 package br.com.belval.api.jornadaativa.security.config;
 
 import br.com.belval.api.jornadaativa.security.jwt.JwtAuthFilter;
-import lombok.RequiredArgsConstructor;
-import org.apache.catalina.filters.CorsFilter;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.filter.CorsFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -18,7 +16,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
@@ -78,22 +75,19 @@ public class SecurityConfig {
      */
     @Bean
     public CorsFilter corsFilter() {
-        CorsConfiguration cfg = new CorsConfiguration();
+        var cfg = new CorsConfiguration();
         cfg.setAllowCredentials(true);
-
-        // ⭐ ORIGENS PERMITIDAS (fixo para destravar)
         cfg.setAllowedOriginPatterns(List.of(
                 "https://jornada-ativa.vercel.app",
                 "https://*.vercel.app",
                 "http://localhost:5173"
         ));
-        // Métodos/Headers padrão de SPA
-        cfg.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
-        cfg.setAllowedHeaders(List.of("Authorization","Content-Type","Accept","Origin","X-Requested-With"));
+        cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        cfg.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"));
         cfg.setExposedHeaders(List.of("Authorization"));
 
-        UrlBasedCorsConfigurationSource src = new UrlBasedCorsConfigurationSource();
-        src.registerCorsConfiguration("/**", cfg);
-        return new CorsFilter(src); // ⭐ responde o preflight ANTES do Spring Security
+        var source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", cfg);
+        return new CorsFilter(source); // ✅ construtor do Spring
     }
-    }
+}
