@@ -1,11 +1,10 @@
 package br.com.belval.api.jornadaativa.security.jwt;
 
-
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -13,63 +12,60 @@ import org.springframework.stereotype.Component;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
-import java.util.stream.Collectors;
+import java.util.function.Function;
 
 @Component
 public class JwtService {
 
-    @Value("${application.security.jwt.secret-key}")
+    @Value("${security.jwt.secret}")
     private String secret;
 
-    @Value("${application.security.jwt.expiration}")
-    private long accessExpirationMs;
-
-    @Value("${application.security.jwt.refresh-token.expiration}")
-    private long refreshExpirationMs;
-
-    @PostConstruct
-    void validateProps() {
-        if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
-            throw new IllegalStateException("JWT secret-key deve ter pelo menos 32 bytes. Ajuste application.security.jwt.secret-key");
-        }
-        if (accessExpirationMs <= 0) {
-            throw new IllegalStateException("JWT expiration deve ser > 0 ms. Ajuste application.security.jwt.expiration");
-        }
-    }
+    @Value("${security.jwt.expiration-ms:86400000}") // 24h
+    private long expirationMs;
 
     private Key key() {
+        // HS256 com chave derivada do secret
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(UserDetails user) {
-        var now = new Date();
-        var exp = new Date(now.getTime() + /* seu expiration ms aqui */ 86400000);
-
-        var roles = user.getAuthorities().stream()
-                .map(a -> a.getAuthority()) // "ROLE_ADMIN", "ROLE_USER"
-                .collect(Collectors.toList());
+    public String generateToken(UserDetails userDetails) {
+        Date now = new Date();
+        Date exp = new Date(now.getTime() + expirationMs);
 
         return Jwts.builder()
-                .setSubject(user.getUsername())
-                .claim("roles", roles)   // <<<<< ADICIONA AS ROLES NO PAYLOAD
+                .setSubject(userDetails.getUsername()) // e-mail
                 .setIssuedAt(now)
                 .setExpiration(exp)
-                .signWith(Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)), SignatureAlgorithm.HS256)
+                .signWith(key(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
     public String extractUsername(String token) {
-        return Jwts.parserBuilder().setSigningKey(key()).build().parseClaimsJws(token).getBody().getSubject();
+        return extractClaim(token, Claims::getSubject);
     }
 
-    public boolean isValid(String token, UserDetails user) {
+    public boolean isValid(String token, UserDetails userDetails) {
         try {
-            var claims = Jwts.parserBuilder().setSigningKey(key()).build().parseClaimsJws(token).getBody();
-
-            return user.getUsername().equals(claims.getSubject())
-                && claims.getExpiration().after(new Date());
+            final String username = extractUsername(token);
+            return username != null
+                    && username.equals(userDetails.getUsername())
+                    && !isExpired(token);
         } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
+    }
+
+    private boolean isExpired(String token) {
+        Date exp = extractClaim(token, Claims::getExpiration);
+        return exp == null || exp.before(new Date());
+    }
+
+    private <T> T extractClaim(String token, Function<Claims, T> resolver) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(key())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return resolver.apply(claims);
     }
 }
