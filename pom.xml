@@ -18,17 +18,17 @@
     <description>Gestor Treino</description>
 
     <properties>
-        <java.version>21</java.version>
+  <java.version>21</java.version>
+  <maven.compiler.release>21</maven.compiler.release>
 
-        <!-- Fixar versões de libs não gerenciadas pelo Spring Boot -->
-        <lombok.version>1.18.32</lombok.version>
-        <!-- O driver abaixo com sufixo jre11 é compatível com Java 11+ (inclui Java 21) -->
-        <mssql.jdbc.version>12.6.1.jre11</mssql.jdbc.version>
-        <jjwt.version>0.11.5</jjwt.version>
+  <!-- Fixar versões -->
+  <lombok.version>1.18.32</lombok.version>
+  <mssql.jdbc.version>12.6.1.jre11</mssql.jdbc.version>
+  <jjwt.version>0.11.5</jjwt.version>
 
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    </properties>
+  <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+</properties>
 
     <dependencies>
         <!-- Spring essenciais -->
@@ -103,31 +103,56 @@
     </dependencies>
 
     <build>
-        <plugins>
-            <!-- Gera o fat-jar (java -jar ...) -->
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <!-- Lombok não é necessário no artefato final -->
-                        <exclude>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                        </exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
+  <plugins>
+    <!-- Java 21 -->
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-compiler-plugin</artifactId>
+      <version>3.11.0</version>
+      <configuration>
+        <release>${maven.compiler.release}</release>
+        <parameters>true</parameters>
+      </configuration>
+    </plugin>
 
-            <!-- Compilação direcionada ao Java 21 -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
-                <configuration>
-                    <release>21</release>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+    <!-- Gera o fat-jar bootável -->
+    <plugin>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-maven-plugin</artifactId>
+      <executions>
+        <execution>
+          <goals>
+            <goal>repackage</goal>
+          </goals>
+        </execution>
+      </executions>
+      <configuration>
+        <excludes>
+          <exclude>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+          </exclude>
+        </excludes>
+      </configuration>
+    </plugin>
+
+    <!-- Não rodar testes no build do container -->
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-surefire-plugin</artifactId>
+      <version>3.2.5</version>
+      <configuration>
+        <skipTests>true</skipTests>
+      </configuration>
+    </plugin>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-failsafe-plugin</artifactId>
+      <version>3.2.5</version>
+      <configuration>
+        <skipITs>true</skipITs>
+      </configuration>
+    </plugin>
+  </plugins>
+</build>
 </project>
