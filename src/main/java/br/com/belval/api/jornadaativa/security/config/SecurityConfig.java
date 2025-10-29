@@ -50,6 +50,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // ⭐ Público
                         .requestMatchers("/health", "/actuator/health", "/auth/**").permitAll()
+                        .requestMatchers("/eventos", "/eventos/**").permitAll()
                         // (opcional) Swagger
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated()
