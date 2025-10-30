@@ -33,6 +33,18 @@ public class Treinos {
     @Column(name = "nivel", length = 50, nullable = false)
     private String nivel;
 
+    @Column(name = "distancia_min_km", precision = 5, scale = 2)
+private java.math.BigDecimal distanciaMinKm;
+
+@Column(name = "distancia_max_km", precision = 5, scale = 2)
+private java.math.BigDecimal distanciaMaxKm;
+
+@Column(name = "duracao_alvo_min", precision = 6, scale = 2) // minutos
+private java.math.BigDecimal duracaoAlvoMin;
+
+@Column(name = "pace_alvo_minpkm", precision = 4, scale = 2) // min/km
+private java.math.BigDecimal paceAlvoMinpkm;
+
 
 }
 
