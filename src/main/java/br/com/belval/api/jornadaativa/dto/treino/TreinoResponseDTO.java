@@ -18,4 +18,9 @@ public class TreinoResponseDTO {
     private String descricao;
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") private LocalDateTime createdAt;
     private String nivel;
+
+    private java.math.BigDecimal distanciaMinKm;
+private java.math.BigDecimal distanciaMaxKm;
+private java.math.BigDecimal duracaoAlvoMin;
+private java.math.BigDecimal paceAlvoMinpkm;
 }
