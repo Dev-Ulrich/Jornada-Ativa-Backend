@@ -59,33 +59,52 @@ public class TreinosController {
 
     // ======= mapeamentos =======
 
-    private Treinos toEntity(TreinoCreateDTO dto) {
-        if (dto == null) return null;
-        Treinos t = new Treinos();
-        t.setNome(dto.getNome());
-        t.setDescricao(dto.getDescricao());
-        t.setNivel(dto.getNivel());
-        t.setCreatedAt(LocalDateTime.now());
-        return t;
-    }
+    
+private Treinos toEntity(TreinoCreateDTO dto) {
+    if (dto == null) return null;
+    Treinos t = new Treinos();
+    t.setNome(dto.getNome());
+    t.setDescricao(dto.getDescricao());
+    t.setNivel(dto.getNivel());
+    t.setCreatedAt(java.time.LocalDateTime.now());
 
-    private Treinos toEntity(TreinoUpdateDTO dto) {
-        if (dto == null) return null;
-        Treinos t = new Treinos();
-        t.setNome(dto.getNome());
-        t.setDescricao(dto.getDescricao());
-        t.setNivel(dto.getNivel());
-        return t;
-    }
+    // NOVOS CAMPOS (opcionais)
+    t.setDistanciaMinKm(dto.getDistanciaMinKm());
+    t.setDistanciaMaxKm(dto.getDistanciaMaxKm());
+    t.setDuracaoAlvoMin(dto.getDuracaoAlvoMin());
+    t.setPaceAlvoMinpkm(dto.getPaceAlvoMinpkm());
+    return t;
+}
 
-    private TreinoResponseDTO toResponse(Treinos t) {
-        if (t == null) return null;
-        TreinoResponseDTO dto = new TreinoResponseDTO();
-        dto.setId(t.getId());
-        dto.setNome(t.getNome());
-        dto.setDescricao(t.getDescricao());
-        dto.setCreatedAt(t.getCreatedAt());
-        dto.setNivel(t.getNivel());
-        return dto;
-    }
+private Treinos toEntity(TreinoUpdateDTO dto) {
+    if (dto == null) return null;
+    Treinos t = new Treinos();
+    t.setNome(dto.getNome());
+    t.setDescricao(dto.getDescricao());
+    t.setNivel(dto.getNivel());
+
+    // NOVOS CAMPOS (opcionais)
+    t.setDistanciaMinKm(dto.getDistanciaMinKm());
+    t.setDistanciaMaxKm(dto.getDistanciaMaxKm());
+    t.setDuracaoAlvoMin(dto.getDuracaoAlvoMin());
+    t.setPaceAlvoMinpkm(dto.getPaceAlvoMinpkm());
+    return t;
+}
+
+private TreinoResponseDTO toResponse(Treinos t) {
+    if (t == null) return null;
+    TreinoResponseDTO dto = new TreinoResponseDTO();
+    dto.setId(t.getId());
+    dto.setNome(t.getNome());
+    dto.setDescricao(t.getDescricao());
+    dto.setCreatedAt(t.getCreatedAt());
+    dto.setNivel(t.getNivel());
+
+    // NOVOS CAMPOS
+    dto.setDistanciaMinKm(t.getDistanciaMinKm());
+    dto.setDistanciaMaxKm(t.getDistanciaMaxKm());
+    dto.setDuracaoAlvoMin(t.getDuracaoAlvoMin());
+    dto.setPaceAlvoMinpkm(t.getPaceAlvoMinpkm());
+    return dto;
+}
 }
