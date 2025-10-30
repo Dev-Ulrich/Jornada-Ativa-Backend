@@ -44,6 +44,9 @@ public class TreinosService {
         treino.setNome(norm(treino.getNome()));
         treino.setDescricao(norm(treino.getDescricao()));
         treino.setNivel(normalizeNivel(treino.getNivel()));
+         treino.setNome(norm(treino.getNome()));
+    treino.setDescricao(norm(treino.getDescricao()));
+    treino.setNivel(normalizeNivel(treino.getNivel()));
         return treinoRepository.save(treino);
     }
 
@@ -62,6 +65,11 @@ public class TreinosService {
         if (dto.getNivel() != null) {
             treino.setNivel(normalizeNivel(dto.getNivel()));
         }
+
+         if (dto.getDistanciaMinKm() != null) treino.setDistanciaMinKm(dto.getDistanciaMinKm());
+    if (dto.getDistanciaMaxKm() != null) treino.setDistanciaMaxKm(dto.getDistanciaMaxKm());
+    if (dto.getDuracaoAlvoMin() != null) treino.setDuracaoAlvoMin(dto.getDuracaoAlvoMin());
+    if (dto.getPaceAlvoMinpkm() != null) treino.setPaceAlvoMinpkm(dto.getPaceAlvoMinpkm());
 
         // como a classe já é @Transactional, o flush acontece automaticamente;
         // ainda assim, manter o save deixa a intenção explícita:
