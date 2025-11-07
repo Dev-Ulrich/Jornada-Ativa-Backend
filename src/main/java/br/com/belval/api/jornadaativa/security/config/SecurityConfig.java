@@ -32,8 +32,7 @@ public class SecurityConfig {
     public SecurityConfig(
             JwtAuthFilter jwtAuthFilter,
             UserDetailsService userDetailsService,
-            PasswordEncoder passwordEncoder
-    ) {
+            PasswordEncoder passwordEncoder) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.userDetailsService = userDetailsService;
         this.passwordEncoder = passwordEncoder;
@@ -51,10 +50,10 @@ public class SecurityConfig {
                         // ⭐ Público
                         .requestMatchers("/health", "/actuator/health", "/auth/**").permitAll()
                         .requestMatchers("/eventos", "/eventos/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/files/**").permitAll()
                         // (opcional) Swagger
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -71,7 +70,8 @@ public class SecurityConfig {
 
     /**
      * CORS configurável por properties:
-     * - app.cors.allowed-origins: lista de origens fixas (ex.: https://jornada-ativa.vercel.app)
+     * - app.cors.allowed-origins: lista de origens fixas (ex.:
+     * https://jornada-ativa.vercel.app)
      * - app.cors.allowed-origin-patterns: padrões (ex.: https://*.vercel.app)
      */
     @Bean
@@ -81,8 +81,7 @@ public class SecurityConfig {
         cfg.setAllowedOriginPatterns(List.of(
                 "https://jornada-ativa.vercel.app",
                 "https://*.vercel.app",
-                "http://localhost:5173"
-        ));
+                "http://localhost:5173"));
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         cfg.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"));
         cfg.setExposedHeaders(List.of("Authorization"));

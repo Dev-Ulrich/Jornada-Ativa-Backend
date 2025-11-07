@@ -13,6 +13,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
+import java.nio.file.*;
+import java.util.List;
+import java.util.Locale;
 
 import java.util.Map;
 import java.util.Optional;
@@ -27,6 +33,72 @@ public class UsuariosService {
 
     public long contarUsuarios() {
         return usuarioRepository.count();
+    }
+
+    @Value("${app.upload-dir:uploads}")
+    private String uploadRoot;
+
+    @Transactional
+    public Usuarios salvarFotoPerfil(Long usuarioId, MultipartFile arquivo) {
+        if (arquivo == null || arquivo.isEmpty()) {
+            throw new Business("Arquivo de imagem vazio.");
+        }
+        String contentType = arquivo.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new Business("Apenas arquivos de imagem são permitidos.");
+        }
+
+        String nomeOriginal = arquivo.getOriginalFilename();
+        String ext = (nomeOriginal != null && nomeOriginal.contains("."))
+                ? nomeOriginal.substring(nomeOriginal.lastIndexOf('.') + 1)
+                : "jpg";
+        ext = ext.toLowerCase(Locale.ROOT);
+
+        List<String> permitidas = List.of("jpg", "jpeg", "png", "webp");
+        if (!permitidas.contains(ext)) {
+            if (contentType.endsWith("png"))
+                ext = "png";
+            else if (contentType.endsWith("webp"))
+                ext = "webp";
+            else
+                ext = "jpg";
+        }
+
+        Usuarios u = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new Business("Usuário não encontrado: id=" + usuarioId));
+
+        Path dir = Paths.get(uploadRoot, "perfis").toAbsolutePath().normalize();
+        try {
+            Files.createDirectories(dir);
+        } catch (IOException ignore) {
+        }
+
+        String filename = "perfil-" + usuarioId + "-" + System.currentTimeMillis() + "." + ext;
+        Path destino = dir.resolve(filename);
+
+        try {
+            arquivo.transferTo(destino.toFile());
+        } catch (IOException e) {
+            throw new Business("Falha ao salvar a imagem: " + e.getMessage());
+        }
+
+        // URL pública relativa servida por StaticResourceConfig
+        String publicUrl = "/files/perfis/" + filename;
+        u.setFtPerfil(publicUrl);
+        return usuarioRepository.save(u);
+    }
+
+    @Transactional
+    public Usuarios salvarFotoPorLink(Long usuarioId, String url) {
+        if (url == null || url.isBlank())
+            throw new Business("URL inválida.");
+        if (!(url.startsWith("http://") || url.startsWith("https://"))) {
+            throw new Business("A URL da imagem deve começar com http(s)://");
+        }
+        Usuarios u = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new Business("Usuário não encontrado: id=" + usuarioId));
+        u.setFtPerfil(url);
+        return usuarioRepository.save(u);
     }
 
     @Transactional
@@ -78,7 +150,8 @@ public class UsuariosService {
     public Usuarios atualizarParcial(Long id, UsuariosUpdateDTO dto) {
         Usuarios u = buscarPorId(id);
 
-        if (dto.getNome() != null) u.setNome(dto.getNome());
+        if (dto.getNome() != null)
+            u.setNome(dto.getNome());
 
         if (dto.getEmail() != null && !dto.getEmail().equalsIgnoreCase(u.getEmail())) {
             usuarioRepository.findByEmail(dto.getEmail())
@@ -93,12 +166,18 @@ public class UsuariosService {
             u.setSenhaHash(passwordEncoder.encode(dto.getSenha()));
         }
 
-        if (dto.getGenero() != null) u.setGenero(dto.getGenero());
-        if (dto.getDataNascimento() != null) u.setDataNascimento(dto.getDataNascimento());
-        if (dto.getFtPerfil() != null) u.setFtPerfil(dto.getFtPerfil());
-        if (dto.getNivel() != null) u.setNivel(dto.getNivel());
-        if (dto.getAltura() != null) u.setAltura(dto.getAltura());
-        if (dto.getPeso() != null) u.setPeso(dto.getPeso());
+        if (dto.getGenero() != null)
+            u.setGenero(dto.getGenero());
+        if (dto.getDataNascimento() != null)
+            u.setDataNascimento(dto.getDataNascimento());
+        if (dto.getFtPerfil() != null)
+            u.setFtPerfil(dto.getFtPerfil());
+        if (dto.getNivel() != null)
+            u.setNivel(dto.getNivel());
+        if (dto.getAltura() != null)
+            u.setAltura(dto.getAltura());
+        if (dto.getPeso() != null)
+            u.setPeso(dto.getPeso());
 
         if (dto.getRole() != null && !dto.getRole().isBlank()) {
             RoleName roleName = toRoleName(dto.getRole());
@@ -122,8 +201,7 @@ public class UsuariosService {
 
         return Map.of(
                 "message", "Usuário deletado com sucesso.",
-                "userId", id
-        );
+                "userId", id);
     }
 
     private RoleName toRoleName(String roleStr) {
@@ -131,7 +209,8 @@ public class UsuariosService {
             throw new Business("Role inválida.");
         }
         String normalized = roleStr.trim().toUpperCase();
-        if (!normalized.startsWith("ROLE_")) normalized = "ROLE_" + normalized;
+        if (!normalized.startsWith("ROLE_"))
+            normalized = "ROLE_" + normalized;
         try {
             return RoleName.valueOf(normalized);
         } catch (IllegalArgumentException ex) {

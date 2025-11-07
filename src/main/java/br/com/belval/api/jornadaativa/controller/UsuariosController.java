@@ -1,6 +1,5 @@
 package br.com.belval.api.jornadaativa.controller;
 
-
 import br.com.belval.api.jornadaativa.dto.usuario.UsuariosCreateDTO;
 import br.com.belval.api.jornadaativa.dto.usuario.UsuariosResponseDTO;
 import br.com.belval.api.jornadaativa.dto.usuario.UsuariosUpdateDTO;
@@ -13,6 +12,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
 import java.util.Map;
@@ -30,6 +31,23 @@ public class UsuariosController {
         Usuarios salvo = usuariosService.criarFromDto(dto);
         UsuariosResponseDTO body = toResponse(salvo);
         return ResponseEntity.created(URI.create("/api/usuarios/" + body.getId())).body(body);
+    }
+
+    @PostMapping(value = "/{id}/foto", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UsuariosResponseDTO> uploadFotoPerfil(
+            @PathVariable Long id,
+            @RequestPart("file") MultipartFile file) {
+        Usuarios atualizado = usuariosService.salvarFotoPerfil(id, file);
+        return ResponseEntity.ok(toResponse(atualizado));
+    }
+
+    @PatchMapping("/{id}/foto-link")
+    public ResponseEntity<UsuariosResponseDTO> atualizarFotoPorLink(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        String url = body.get("url");
+        Usuarios atualizado = usuariosService.salvarFotoPorLink(id, url);
+        return ResponseEntity.ok(toResponse(atualizado));
     }
 
     @GetMapping("/{id}")
@@ -55,10 +73,11 @@ public class UsuariosController {
         long total = usuariosService.contarUsuarios();
         return ResponseEntity.ok(total);
     }
+
     // Atualização completa (usa os campos presentes; os nulos são ignorados)
     @PutMapping("/{id}")
     public ResponseEntity<UsuariosResponseDTO> atualizar(@PathVariable Long id,
-                                                         @Valid @RequestBody UsuariosUpdateDTO dto) {
+            @Valid @RequestBody UsuariosUpdateDTO dto) {
         Usuarios atualizado = usuariosService.atualizarParcial(id, dto);
         return ResponseEntity.ok(toResponse(atualizado));
     }
@@ -66,13 +85,13 @@ public class UsuariosController {
     // Atualização parcial (PATCH) – mesma lógica do PUT acima
     @PatchMapping("/{id}")
     public ResponseEntity<UsuariosResponseDTO> atualizarParcial(@PathVariable Long id,
-                                                                @RequestBody UsuariosUpdateDTO dto) {
+            @RequestBody UsuariosUpdateDTO dto) {
         Usuarios atualizado = usuariosService.atualizarParcial(id, dto);
         return ResponseEntity.ok(toResponse(atualizado));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String,Object>> deletar(@PathVariable Long id) {
+    public ResponseEntity<Map<String, Object>> deletar(@PathVariable Long id) {
         Map<String, Object> resposta = usuariosService.deletar(id);
         return ResponseEntity.ok(resposta);
     }
@@ -96,12 +115,11 @@ public class UsuariosController {
         return dto;
     }
 
-
-
     // Usa o campo "role" (String) se preenchido;
     // senão, pega a primeira Role do Set<Role> (ROLE_*)
     private String resolveRole(Usuarios u) {
-        if (u.getRole() != null && !u.getRole().isBlank()) return u.getRole();
+        if (u.getRole() != null && !u.getRole().isBlank())
+            return u.getRole();
         Optional<Role> first = u.getRoles().stream().findFirst();
         return first.map(r -> r.getName().name()).orElse(null);
     }
