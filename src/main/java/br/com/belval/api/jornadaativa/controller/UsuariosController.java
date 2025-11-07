@@ -77,15 +77,6 @@ public class UsuariosController {
         return ResponseEntity.ok(resposta);
     }
 
-     @PostMapping(value = "/{id}/foto", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UsuariosResponseDTO> uploadFotoPerfil(
-            @PathVariable Long id,
-            @RequestPart("file") MultipartFile file // ou @RequestParam("file")
-    ) {
-        Usuarios atualizado = usuariosService.salvarFotoPerfil(id, file);
-        return ResponseEntity.ok(toResponse(atualizado));
-    }
-
     // ------------------------------------
     // mapeamento Entidade -> DTO de saída
     private UsuariosResponseDTO toResponse(Usuarios u) {
