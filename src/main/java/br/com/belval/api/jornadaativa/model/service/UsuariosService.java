@@ -24,6 +24,8 @@ public class UsuariosService {
     private final UsuarioRepository usuarioRepository;
     private final RoleService roleService;
     private final PasswordEncoder passwordEncoder;
+    @Value("${app.upload-dir:uploads}")
+    private String uploadRoot;
 
     public long contarUsuarios() {
         return usuarioRepository.count();
@@ -55,6 +57,57 @@ public class UsuariosService {
 
         salvo.getRoles().add(role);
         return usuarioRepository.save(salvo);
+    }
+
+    @Transactional
+    public Usuarios salvarFotoPerfil(Long usuarioId, MultipartFile arquivo) {
+        if (arquivo == null || arquivo.isEmpty()) {
+            throw new Business("Arquivo de imagem vazio.");
+        }
+
+        String contentType = arquivo.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new Business("Apenas arquivos de imagem são permitidos.");
+        }
+
+        // valida extensões básicas
+        String nomeOriginal = arquivo.getOriginalFilename();
+        String ext = (nomeOriginal != null && nomeOriginal.contains("."))
+                ? nomeOriginal.substring(nomeOriginal.lastIndexOf('.') + 1)
+                : "jpg";
+        ext = ext.toLowerCase(Locale.ROOT);
+
+        List<String> permitidas = List.of("jpg", "jpeg", "png", "webp");
+        if (!permitidas.contains(ext)) {
+            // fallback pela mimetype
+            if (contentType.endsWith("png")) ext = "png";
+            else if (contentType.endsWith("webp")) ext = "webp";
+            else ext = "jpg";
+        }
+
+        Usuarios u = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new Business("Usuário não encontrado: id=" + usuarioId));
+
+        // cria diretório
+        Path dir = Paths.get(uploadRoot, "perfis").toAbsolutePath().normalize();
+        try { Files.createDirectories(dir); } catch (IOException ignore) {}
+
+        String filename = "perfil-" + usuarioId + "-" + System.currentTimeMillis() + "." + ext;
+        Path destino = dir.resolve(filename);
+
+        try {
+            // grava arquivo
+            arquivo.transferTo(destino.toFile());
+        } catch (IOException e) {
+            throw new Business("Falha ao salvar a imagem: " + e.getMessage());
+        }
+
+        // monta URL pública servida pelo StaticResourceConfig
+        String publicUrl = "/files/perfis/" + filename;
+
+        // atualiza o usuário
+        u.setFtPerfil(publicUrl);
+        return usuarioRepository.save(u);
     }
 
     @Transactional(readOnly = true)
